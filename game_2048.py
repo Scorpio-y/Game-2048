@@ -331,7 +331,7 @@ def main():
         flag = GameInit.drawWelcome(screen)    #flag为返回鼠标点击的选项
         pygame.display.update()  #更新画面
         if flag == 1:       #开始游戏，初始化界面
-            pygame.mixer.music.play(loops=1, start=0.0) #开始播放背景音乐
+            pygame.mixer.music.play(-1, start=0.0) #开始播放背景音乐，-1表示循环播放
             GameInit.drawSurface(screen,matrix,currentscore,-1)
             GameInit.drawMusicButton(screen,0,0,0,count1)    #音乐按钮显示开
             GameInit.drawSoundButton(screen,0,0,0,count2)
@@ -373,7 +373,7 @@ def main():
                             f = GameInit.drawResult(screen,currentscore,int(matrix.max()))    #f为返回鼠标点击的选项
                             pygame.display.update()  #更新画面
                             if f == 1:      #重新开始游戏
-                                pygame.mixer.music.play(loops=1, start=0.0) #开始播放背景音乐
+                                pygame.mixer.music.play(-1, start=0.0) #开始播放背景音乐
                                 screen = pygame.display.set_mode(Screen_Size,0,32)      #屏幕设置
                                 matrix = GameInit.updateData()        #更新矩阵的值
                                 currentscore = 0        #分数
