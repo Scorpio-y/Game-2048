@@ -1,5 +1,4 @@
 # _*_ coding:UTF-8 _*_
-
 import numpy,sys,random,pygame
 from pygame.locals import*
 
@@ -231,7 +230,35 @@ class GameInit:
                     return 2
                 else:
                     return 0
-        
+
+    @classmethod
+    #游戏开始和介绍画面
+    def drawWelcome(cls,screen):
+        #第一个参数是屏幕，第二个参数颜色，第三个参数rect大小，第四个默认参数
+        pygame.draw.rect(screen,(250,248,239),Result_Rect)
+        pygame.draw.rect(screen,(0,0,0),Restart_Rect)
+        pygame.draw.rect(screen,(0,0,0),Exit_Rect)
+        font1 = pygame.font.SysFont('stxingkai',80) #游戏结束字体
+        font2 = pygame.font.SysFont('stxingkai',40) #得分字体
+        font3 = pygame.font.SysFont('stxingkai',25) #介绍字体
+        #font.render第一个参数是文本内容，第二个参数是否抗锯齿，第三个参数字体颜色
+        screen.blit(font1.render('2 0 4 8',True,(255,127,0)),(138,70))
+        screen.blit(font3.render('键位介绍：使用上下左右方向键或',True,(0,0,0)),(45,230))
+        screen.blit(font3.render('WASD键控制方块的移',True,(0,0,0)),(170,270))
+        screen.blit(font3.render('动，R键可以撤回一步',True,(0,0,0)),(170,310))
+        screen.blit(font2.render('开始游戏',True,(255,127,0)),(160,430))
+        screen.blit(font2.render('退出游戏',True,(255,127,0)),(160,480))
+        x, y = pygame.mouse.get_pos()       #获得鼠标位置
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if 153<=x<=328 and 430<=y<=470:         #开始游戏
+                    return 1
+                if 153<=x<=328 and 480<=y<=520:       #退出游戏
+                    return 2
+                else:
+                    return 0
+
+    
     #静态方法，不能加self参数，可以直接用类名调用
     @staticmethod
     def keyDownPressed(keyvalue,matrix):
@@ -243,6 +270,8 @@ class GameInit:
             return UpAction(matrix),3
         elif keyvalue == K_DOWN or keyvalue == K_s:
             return DownAction(matrix),4
+        elif keyvalue == K_r:
+            return 1,-1
         else:       #按到其他键
             return -1,-1
 
@@ -269,39 +298,65 @@ def main():
     screen = pygame.display.set_mode(Screen_Size,0,32)      #屏幕设置
     pygame.display.set_caption('2048小游戏')
     matrix = GameInit.updateData()        #更新矩阵的值
+    oldmatrix = matrix
     currentscore = 0        #分数
+    oldscore = currentscore
     GameInit.drawSurface(screen,matrix,currentscore,-1)
     pygame.display.update()     #必须有，每次画完要更新画面
+    flag=0    #flag默认为0，为欢迎界面，flag为1时开始游戏
     while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:       #退出游戏
-                pygame.quit()
-                sys.exit(0)
-            elif event.type == pygame.KEYDOWN:      #按键按下
-                #创建各种动作类的对象，types代表按下的是哪个按键，从而让相应的字变黑色
-                actionObject,types = GameInit.keyDownPressed(event.key,matrix)
-                if actionObject != -1:
-                    matrix,score = actionObject.handleData()    #处理数据，获得新矩阵与分数
-                    currentscore += score
-                    GameInit.drawSurface(screen,matrix,currentscore,types)        #重新绘制新矩阵
-                    pygame.display.update()  #更新画面
-                if matrix.min() != 0:
-                    while GameInit.gameOver(matrix) == True:   #判断游戏是否结束
-                        f = GameInit.drawResult(screen,currentscore,int(matrix.max()))    #f为返回鼠标点击的选项
+        #开始和介绍界面
+        flag = GameInit.drawWelcome(screen)    #flag为返回鼠标点击的选项
+        pygame.display.update()  #更新画面
+        if flag == 1:       #开始游戏，初始化界面
+            GameInit.drawSurface(screen,matrix,currentscore,-1)
+            pygame.display.update()     #必须有，每次画完要更新画面
+        elif flag == 2:       #退出游戏
+            pygame.quit()
+            sys.exit(0)
+        while flag==1:      #游戏主界面
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:       #退出游戏
+                    pygame.quit()
+                    sys.exit(0)
+                elif event.type == pygame.KEYDOWN:      #按键按下
+                    #创建各种动作类的对象，types代表按下的是哪个按键，从而让相应的字变黑色
+                    actionObject,types = GameInit.keyDownPressed(event.key,matrix)
+                    if actionObject != -1 and actionObject != 1:    #上下左右
+                        oldmatrix = matrix  #保存上一个matrix，可以实现撤销功能
+                        oldscore = currentscore
+                        matrix,score = actionObject.handleData()    #处理数据，获得新矩阵与分数
+                        currentscore += score
+                        GameInit.drawSurface(screen,matrix,currentscore,types)        #重新绘制新矩阵
                         pygame.display.update()  #更新画面
-                        if f == 1:      #重新开始游戏
-                            screen = pygame.display.set_mode(Screen_Size,0,32)      #屏幕设置
-                            matrix = GameInit.updateData()        #更新矩阵的值
-                            currentscore = 0        #分数
-                            GameInit.drawSurface(screen,matrix,currentscore,-1)
-                            pygame.display.update()     #必须有，每次画完要更新画面
-                            flag=0
-                            break       #跳出此循环，重新开始游戏
-                        elif f == 2:    #结束，退出游戏
-                            pygame.quit()
-                            sys.exit(0)
-            elif event.type == pygame.KEYUP:        #按键松开
-                GameInit.drawSurface(screen,matrix,currentscore,-1) #字体颜色恢复原来的黄色
-                pygame.display.update()  #更新画面
+                    if actionObject == 1:       #撤销一步
+                        matrix = oldmatrix
+                        currentscore = oldscore
+                        GameInit.drawSurface(screen,matrix,currentscore,-1)
+                        pygame.display.update()  #更新画面
+                        #print(oldmatrix,oldscore)
+                    if matrix.min() != 0:
+                        while GameInit.gameOver(matrix) == True:   #判断游戏是否结束
+                            f = GameInit.drawResult(screen,currentscore,int(matrix.max()))    #f为返回鼠标点击的选项
+                            pygame.display.update()  #更新画面
+                            if f == 1:      #重新开始游戏
+                                screen = pygame.display.set_mode(Screen_Size,0,32)      #屏幕设置
+                                matrix = GameInit.updateData()        #更新矩阵的值
+                                currentscore = 0        #分数
+                                GameInit.drawSurface(screen,matrix,currentscore,-1)
+                                pygame.display.update()     #必须有，每次画完要更新画面
+                                #f = 0
+                                break       #跳出此循环，重新开始游戏
+                            elif f == 2:    #结束，退出游戏
+                                pygame.quit()
+                                sys.exit(0)
+                elif event.type == pygame.KEYUP:        #按键松开
+                    if actionObject == 1:       #撤销
+                        matrix = oldmatrix
+                        currentscore = oldscore
+                        GameInit.drawSurface(screen,matrix,currentscore,-1)
+                        pygame.display.update()  #更新画面
+                    GameInit.drawSurface(screen,matrix,currentscore,-1) #字体颜色恢复原来的黄色
+                    pygame.display.update()  #更新画面
 if __name__ == '__main__':
     main()
